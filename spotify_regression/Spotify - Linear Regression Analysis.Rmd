@@ -1,0 +1,48 @@
+---
+title: "The Anatomy of a Hit - What Drives Song Popularity?"
+author: "Quynh Vo"
+date: "2025-08-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is one of the projects from the Regression Analysis course in my third year undergrad. The analysis is conducted on the data set I was given in the course, thus I have no idea where the data comes from. I uploaded the data file (`spotify.csv`) in the same folder containing this Rmarkdown file.
+
+Let's start with having a look at our data set.
+
+```{r import}
+#import data
+df <- read.csv("spotify.csv")
+head(df)
+```
+
+```{r check general info}
+#look at the structure of df
+str(df)
+```
+```{r check cleanliness}
+#count missing values in each column
+colSums(is.na(df))
+```
+Some preliminary steps shows that the given data set is clean and ready to use. There are 114000 observations representing songs on Spotify over 8 variables representing the recorded features of each song. All the variables are of numeric type, thus we can go ahead with looking at the summary statistics as well as some plots to grasp the general idea about the distribution of each song feature, which is part of the phase in the Data Lifecycle often referred as **Explanatory Data Analysis** (EDA).
+
+```{r sum stats}
+#summary statistics
+summary(df)
+```
+
+```{r plot, echo=FALSE}
+for (i in 1:length(colnames(df))) {
+  #print(colnames(df)[i])
+  plotName = cat("Distribution of ", colnames(df)[i])
+  hist(data.matrix(df[colnames(df)[i]]),
+       main = plotName,
+       xlab = colnames(df)[i])
+}
+
+```
+
+In general, this dataset looks fairly good and normalized, with features like `danceablity`, `energy`, `acousticness`, `instrumentalness`, `liveness` range between 0 and 1. `Popularity` seems to have been adjusted to the 0-100 scale. However, a potential issue stands out for `duration_ms` for some extreme outliers, as also pointed out in the histogram for `duration_ms`, (songs lasting over 5 million ms ≈ 87 minutes, which is unusual for typical songs).
