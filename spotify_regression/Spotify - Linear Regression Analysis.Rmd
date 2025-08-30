@@ -42,7 +42,44 @@ for (i in 1:length(colnames(df))) {
        main = plotName,
        xlab = colnames(df)[i])
 }
-
 ```
 
 In general, this dataset looks fairly good and normalized, with features like `danceablity`, `energy`, `acousticness`, `instrumentalness`, `liveness` range between 0 and 1. `Popularity` seems to have been adjusted to the 0-100 scale. However, a potential issue stands out for `duration_ms` for some extreme outliers, as also pointed out in the histogram for `duration_ms`, (songs lasting over 5 million ms ≈ 87 minutes, which is unusual for typical songs).
+
+```{r 1st model}
+# Fit a linear model
+model1 = lm(popularity ~ ., data=df)
+
+# result 1
+summary(model1)
+```
+First, the p-value obtained from the F-test is very small (< 2.2e-16), which shows that at least one of these predictors explain popularity, or overall the model does explain popularity. However, R-squared = 0.01 is very small, even after accounted for a large number of predictors, the adjusted R-squared = 0.0113 (~ 1.13%) shows the model explains little about the relationship of interest. This suggests a song popularity may be not be captured by these characteristics alone.
+
+Second, looking closer to the p-values for each t-test, the intercept, danceability, energy, acousticness, instrumentalness and tempo statistically appear have a significant influence on a song's popularity. Specifically, energy, acousticness and instrumentalness have negative impact whereas the intercept, danceability and tempo have positive impact on popularity.
+
+We got some good information so far, but still not very useful. We can try tweaking a little bit to see what else can we exploit from this model. We may guess that there may be some relationship between our predictors (for example, a song that is more acoustic tends to be less energetic, or danceable). Apparently, if it is really the case, we are violating the assumptions of a linear regression model (the predicting variables must be independent). Thus, let's have a check.
+
+```{r 2nd model}
+### Let's fit a second model without `acousticness`
+model2 = lm(popularity ~ .-acousticness, data = df)
+
+# result 2
+summary(model2)
+
+# change in coefficients
+print("Coefficient shift: ")
+model2$coefficients - model1$coefficients[-5] #omit `acousticness` in model 1
+# coefficient shift: energy (-5.6 to -1.96 -> large increase), danceability (2.2 to 2.7)
+```
+First, we notice that djusted R-squared drops, this makes sense as we remove `acousticness` and it is a significant predictor. And then, `duration_ms` and `liveness`, which were insignificant before now become weakly significant. This may be an evidence for another guess about the relationship between `liveness` and `acousticness` since acoustic tracks are often recorded live.
+
+Also, a closer look at the coefficients shows that removing `acousticness`, which has a negative effect on popularity, coefficient of `energy` increases. This shows `acousticness` and `energy` are correlated, verifying our guess about acoustic songs tend to be less energetic. Or by looking at the growth in `danceability` coefficient, we may guess `acousticness` was “masking” part of `danceability`’s effect since acoustic songs are often less danceable.
+
+A more direct way to check for correlation between predictors is to use the correlation matrix.
+
+```{r correlation matrix}
+# correlation matrix
+cor(subset(df, select = -popularity))
+```
+
+`energy` is shown to negatively correlate with `acousticness`.
