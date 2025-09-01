@@ -57,11 +57,71 @@ summary(model1)
 ### comments: 
 # the CIs for each covariates show us that with 95% confidence, they can capture the real coefficients for these covariates
  
-### Let's fit a second model without `acousticness`
-model2 = lm(popularity ~ .-acousticness, data = df)
+#------------------------------
+# 3. Assumption check
+#------------------------------
 
-# result 2
+### Checking normality
+
+# Check normality of the error term using the QQ-plot for the residuals
+if (!require("car")) install.packages("car")
+
+# Plot QQ-plot
+qqPlot(model1$residuals, distribution="norm", pch=1, col="red", xlab="Theoretical normal quantiles", ylab="Sample quantiles" )
+
+### the distribution of the errors is not so great, light-tailed. Check by plotting a histogram
+hist(model1$residuals,breaks = 100, xlab="Residuals", main="Histogram of residuals", freq=FALSE, xlim=c(-60,60))
+curve(dnorm(x, mean=mean(model1$residuals), sd=sd(model1$residuals)), 
+      col="red", lwd=2, add=TRUE)
+
+### Checking other assumptions for the errors e.g independence, mean = 0, constant variance
+
+plot(model1$fitted.values, model1$residuals, xlab = "Fitted values", ylab = "Residuals")
+
+### comment: 
+# 1. As the fitted popularity score increases, the variance of the residuals increases.
+# 2. The mean of the errors seem to be positive, thus the model seems to underestimate the response.
+
+#------------------------------
+# 4. Model improvement
+#------------------------------
+
+# Recall that the histogram for `popularity` shows a great number of observations with popularity score equal 0
+# This may cause a problem for our model, thus we will remove them for now and look closer at those with popularity score = 0 later
+
+df2 = subset(df, popularity > 0)
+
+# Fit a second model with this modified df
+
+model2 = lm(popularity ~., data = df2)
+
+# Result 2
+
 summary(model2)
+
+# Assumption check for model 2
+
+# Plot QQ-plot
+qqPlot(model2$residuals, distribution="norm", pch=1, col="red", xlab="Theoretical normal quantiles", ylab="Sample quantiles" )
+
+# many points below the line is now onto the line, but the distribution is still light-tailed.
+
+# Plot of the residuals against the fitted value
+plot(model2$fitted.values, model2$residuals, xlab = "Fitted values", ylab = "Residuals")
+
+### Comments:
+# 1. the model tends to underestimate popularity score that are less than $20$.
+# 2. for values that are greater than $20$, we see that the variance of residuals increases as popularity score increases.
+# 3. the assumption of the errors being identically distributed is still not satisfied, but the normality assumption is better respected.
+# 4. the model better explains the response, with significantly increased R_adjusted = 0.45
+
+# Addressing multicollinearity:
+
+### Let's fit a second model without `acousticness`
+model3 = lm(popularity ~ .-acousticness, data = df2)
+
+# result 3
+summary(model3)
 
 # change in coefficients
 model2$coefficients - model1$coefficients[-5] #omit `acousticness` in model 1
