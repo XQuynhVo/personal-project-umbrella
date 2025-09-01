@@ -53,33 +53,88 @@ model1 = lm(popularity ~ ., data=df)
 # result 1
 summary(model1)
 ```
-First, the p-value obtained from the F-test is very small (< 2.2e-16), which shows that at least one of these predictors explain popularity, or overall the model does explain popularity. However, R-squared = 0.01 is very small, even after accounted for a large number of predictors, the adjusted R-squared = 0.0113 (~ 1.13%) shows the model explains little about the relationship of interest. This suggests a song popularity may be not be captured by these characteristics alone.
+First, the p-value obtained from the F-test is very small (< 2.2e-16), which shows that at least one of these predictors explain popularity, or overall the model does explain popularity. However, R-squared = 0.01 is very small, even after accounted for a large number of predictors, the adjusted R-squared = 0.0113 (~ 1.13%) shows the model explains little about the relationship of interest. This suggests a song popularity may be not be captured by these characteristics alone. The ANOVA table provides more evidence for this.
+
+```{r anova 1}
+# create a null model to compare
+null_model1 = lm(popularity ~ 1, data = df)
+
+# anova table
+anova(null_model1, model1)
+```
 
 Second, looking closer to the p-values for each t-test, the intercept, danceability, energy, acousticness, instrumentalness and tempo statistically appear have a significant influence on a song's popularity. Specifically, energy, acousticness and instrumentalness have negative impact whereas the intercept, danceability and tempo have positive impact on popularity.
 
-We got some good information so far, but still not very useful. We can try tweaking a little bit to see what else can we exploit from this model. We may guess that there may be some relationship between our predictors (for example, a song that is more acoustic tends to be less energetic, or danceable). Apparently, if it is really the case, we are violating the assumptions of a linear regression model (the predicting variables must be independent). Thus, let's have a check.
+Recall from the plots among all the covariates in the EDA step, we noticed that there are a great number of observation for `popularity` with value 0. We may want to address this to improve our model.
+
+```{r subseted df}
+df2 = subset(df, popularity > 0)
+head(df2)
+```
+
+Let's fit a second model using this subseted dataframe.
 
 ```{r 2nd model}
+# refitted model 
+model2 = lm(popularity~., data=df2)
+summ2 = summary(model2); summ2
+```
+
+Now we check our assumptions using diagnostic plots to see what has changed.
+
+```{r refitted QQ plot}
+qqPlot(model2$residuals, distribution="norm", pch=1, col="red", xlab="Theoretical normal quantiles", ylab="Sample quantiles")
+```
+
+In the Q-Q plot, we notice many points originally below the line now are onto the line. The S-shape still remains.
+
+```{r refitted histogram of residuals}
+hist(model2$residuals,breaks = 100, xlab="Residuals", main="Histogram of residuals", freq=FALSE, xlim=c(-60,60), ylim=c(0,0.030))
+curve(dnorm(x, mean=mean(model2$residuals), sd=sd(model2$residuals)), 
+      col="darkblue", lwd=2, add=TRUE)
+```
+
+A great number of points overestimating popularity scores (points with residuals around $-40$) have been removed. The histogram fits in the area under the normal curve much more, but still has lighter tails than the normal curve.
+
+```{r refitted studentized res vs. fitted values}
+#studentized residuals
+studentized_res2 = rstudent(model2)
+
+#plot
+plot(model2$fitted.values, studentized_res2, xlab="Fitted values", ylab="Studentized residuals", pch=1)
+```
+
+The plot of the studentized residuals against the fitted values for popularity shows that the model tends to underestimate popularity score that are less than $20$. For values that are greater than $20$, we see that the variance of residuals increases as popularity score increases. The assumption of the errors being identically distributed is still not satisfied. However, the Q-Q plot and the histogram of residuals show that the normality assumption is better respected.
+
+This model fits the data better compared to our previous model, as we obtained higher value for $R^2_{adj}=0.045$, which is still not so great.
+
+We got some good information so far, but still not very useful. We can try tweaking a little bit to see what else can we exploit from this model. We may guess that there may be some relationship between our predictors (for example, a song that is more acoustic tends to be less energetic, or danceable). Apparently, if it is really the case, we are violating the assumptions of a linear regression model (the predicting variables must be independent). Thus, let's have a check.
+
+```{r 3rd model}
 ### Let's fit a second model without `acousticness`
-model2 = lm(popularity ~ .-acousticness, data = df)
+model3 = lm(popularity ~ .-acousticness, data = df2)
 
-# result 2
-summary(model2)
-
+# result 3
+summary(model3)
+```
+```{r coefficient shift}
 # change in coefficients
 print("Coefficient shift: ")
-model2$coefficients - model1$coefficients[-5] #omit `acousticness` in model 1
-# coefficient shift: energy (-5.6 to -1.96 -> large increase), danceability (2.2 to 2.7)
+model3$coefficients - model2$coefficients[-5] #omit `acousticness` in model 2
+# coefficient shift: energy (-8.5 to -4.2 -> large increase), danceability (2.3 to 2.8)
 ```
-First, we notice that djusted R-squared drops, this makes sense as we remove `acousticness` and it is a significant predictor. And then, `duration_ms` and `liveness`, which were insignificant before now become weakly significant. This may be an evidence for another guess about the relationship between `liveness` and `acousticness` since acoustic tracks are often recorded live.
+
+First, we notice that adjusted R-squared drops, this makes sense as we remove `acousticness` and it is a significant predictor. And then, `duration_ms` and `liveness`, which were insignificant before now become weakly significant. This may be an evidence for another guess about the relationship between `liveness` and `acousticness` since acoustic tracks are often recorded live.
 
 Also, a closer look at the coefficients shows that removing `acousticness`, which has a negative effect on popularity, coefficient of `energy` increases. This shows `acousticness` and `energy` are correlated, verifying our guess about acoustic songs tend to be less energetic. Or by looking at the growth in `danceability` coefficient, we may guess `acousticness` was “masking” part of `danceability`’s effect since acoustic songs are often less danceable.
 
-A more direct way to check for correlation between predictors is to use the correlation matrix.
+A more direct way to check for correlation between predictors (`multicollinearity`) is to use the correlation matrix.
 
 ```{r correlation matrix}
 # correlation matrix
-cor(subset(df, select = -popularity))
+cor(subset(df2, select = -popularity))
 ```
 
 `energy` is shown to negatively correlate with `acousticness`.
+
+Another more convention way to check for `collinearity`.
