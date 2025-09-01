@@ -124,7 +124,7 @@ model3 = lm(popularity ~ .-acousticness, data = df2)
 summary(model3)
 
 # change in coefficients
-model2$coefficients - model1$coefficients[-5] #omit `acousticness` in model 1
+model3$coefficients - model2$coefficients[-5] #omit `acousticness` in model 1
 # coefficient shift: energy (-5.6 to -1.96 -> large increase), danceability (2.2 to 2.7)
 
 # comments:
@@ -140,3 +140,4 @@ model2$coefficients - model1$coefficients[-5] #omit `acousticness` in model 1
 cor(subset(df, select = -popularity))
 
 # comments: check by correlation matrix, `energy` is shown to negatively correlate with `acousticness`.
+
