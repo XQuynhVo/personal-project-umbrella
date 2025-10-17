@@ -4,14 +4,11 @@ author: "Quynh Vo"
 date: "2025-08-28"
 output: html_document
 ---
+Source: Prof. Kelly Ramsay - Department of Mathematics & Statistics - York University
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+This is one of the projects from the Regression Analysis course in my third year undergrad. The analysis is conducted on the data set I was given in the course. I uploaded the data file (`spotify.csv`) in the same folder containing this Rmarkdown file. For those who saw this on my personal website, please go to my [Github](https://github.com/XQuynhVo) for the code.
 
-This is one of the projects from the Regression Analysis course in my third year undergrad. The analysis is conducted on the data set I was given in the course, thus I have no idea where the data comes from. I uploaded the data file (`spotify.csv`) in the same folder containing this Rmarkdown file.
-
-Let's start with having a look at our data set.
+Let's start with having a look at the data set.
 
 ```{r import}
 #import data
@@ -27,12 +24,27 @@ str(df)
 #count missing values in each column
 colSums(is.na(df))
 ```
-Some preliminary steps shows that the given data set is clean and ready to use. There are 114000 observations representing songs on Spotify over 8 variables representing the recorded features of each song. All the variables are of numeric type, thus we can go ahead with looking at the summary statistics as well as some plots to grasp the general idea about the distribution of each song feature, which is part of the phase in the Data Lifecycle often referred as **Explanatory Data Analysis** (EDA).
+
+The data set contains 114000 songs on Spotify with 8 other variables representing the recorded features relating to a song.
+
+All the variables are of numeric type, thus we can go ahead with looking at the summary statistics as well as some plots for a quick grasp of their distributions, which is part of the phase in the Data Life Cycle often referred as **Explanatory Data Analysis** (EDA).
 
 ```{r sum stats}
 #summary statistics
 summary(df)
 ```
+
+From the above information, my understanding of these variables are:
+- `popularity`: a quantity representing how popular a song is relative to all the recorded songs, on a 1-100 scale.
+- `duration_ms`: time length of a song, measured in milliseconds.
+- `danceability`: a quantity representing how easy a song can make its listeners moving with the beat, normalized to a 0.0 - 1.0 scale.
+- `energy`: a quantity measuring intensity of a song, can be based on how loud, or fast a song is (`tempo`), normalized to a 0.0 - 1.0 scale.
+- `acousticness`: a quantity measuring the amount of recorded acoustic instrument present in a track, in contrast to synthesized, or electronic amplification, normalized to a 0.0 - 1.0 scale.
+- `instrumentalness`: a quantity measuring the amount of instrument (non-lyrical) component in a song, as opposed to vocal component (lyric), normalized to a 0.0 - 1.0 scale. 
+- `liveness`: a quantity measuring the presence of audience or noise of a recorded song, normalized to a 0.0 - 1.0 scale.
+- `tempo`: a quantity measuring how fast the beat of a song is.
+
+We can also look closer at the distribution of each features by plotting their histograms.
 
 ```{r plot, echo=FALSE}
 for (i in 1:length(colnames(df))) {
@@ -138,3 +150,4 @@ cor(subset(df2, select = -popularity))
 `energy` is shown to negatively correlate with `acousticness`.
 
 Another more convention way to check for `collinearity`.
+
