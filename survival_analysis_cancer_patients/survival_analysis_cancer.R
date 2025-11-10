@@ -9,7 +9,7 @@ library(corrplot)
 library(survminer)
 
 # Load the dataset
-df = read_excel("Datasets/seer1_Thao_Xuan.xlsx")
+df = read_excel("Datasets/seer1.xlsx")
 View(df)
 
 # Size
@@ -365,4 +365,5 @@ summary(cox1)
 # Check Cox proportion model assumption again
 ph1<-cox.zph(cox1)
 print(ph1)
+
 plot(ph1)
